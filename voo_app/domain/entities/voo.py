@@ -1,9 +1,9 @@
-from domain.entities.passageiro import Passageiro
-from domain.entities.funcionario import Funcionario
-from domain.entities.pessoa import Pessoa
-from domain.entities.mini_aeronave import MiniAeronave
-from interface_adapters.presenters.relatorio_builder import _RelatorioBuilder
-from infrastructure.database.models_method import listar_passageiros, listar_funcionarios, Session
+from voo_app.domain.entities.passageiro import Passageiro
+from voo_app.domain.entities.funcionario import Funcionario
+from voo_app.domain.entities.pessoa import Pessoa
+from voo_app.domain.entities.mini_aeronave import MiniAeronave
+from voo_app.interface_adapters.presenters.relatorio_builder import _RelatorioBuilder
+from voo_app.infrastructure.database.models_method import listar_passageiros, listar_funcionarios, Session
 from sqlalchemy.exc import NoResultFound
 class Voo:
     def __init__(self, numero_voo, origem, destino, aeronave: MiniAeronave):

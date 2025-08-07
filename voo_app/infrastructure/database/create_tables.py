@@ -1,2 +1,4 @@
-from voo_app.infrastructure.database.connect import Base, engine
+from connect import Base, engine
+import models_shared
+import models
 Base.metadata.create_all(bind=engine)

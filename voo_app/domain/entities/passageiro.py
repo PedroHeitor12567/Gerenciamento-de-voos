@@ -1,5 +1,5 @@
-from domain.entities.pessoa import Pessoa
-from domain.entities.bagagem import Bagagem
+from voo_app.domain.entities.pessoa import Pessoa
+from voo_app.domain.entities.bagagem import Bagagem
 
 class Passageiro(Pessoa):
     def __init__(self, nome: str, cpf: str, bagagens: list[Bagagem] = None):

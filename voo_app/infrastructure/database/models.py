@@ -70,3 +70,12 @@ class VooModel(Base):
         if self.aeronave:
             return self.total_ocupantes() > self.aeronave.capacidade
         return False
+
+class CompanhiasModel(Base):
+    __tablename__ = "companhias"
+
+    id = Column(Integer, primary_key=True)
+    nome = Column(String, unique=True, nullable=False)
+
+    def __repr__(self):
+        return f"<CompanhiaModel(nome='{self.nome}')>"

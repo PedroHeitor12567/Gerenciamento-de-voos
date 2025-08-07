@@ -1,7 +1,7 @@
-from domain.entities.pessoa import Pessoa
+from voo_app.domain.entities.pessoa import Pessoa
 from datetime import datetime
-from domain.interfaces.logavel import Logavel
-from domain.mixins.identificavel import IndentificavelMixin
+from voo_app.domain.interfaces.logavel import Logavel
+from voo_app.domain.mixins.identificavel import IndentificavelMixin
 
 class Funcionario(Pessoa, Logavel, IndentificavelMixin):
     def __init__(self, nome:str, cpf:str, cargo:str, matricula:str):

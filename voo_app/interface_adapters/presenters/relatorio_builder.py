@@ -12,4 +12,4 @@ class _RelatorioBuilder:
         self.tabela.add_row(*[str(v) for v in valores])
 
     def construir(self):
-        self.tabela
+        return self.tabela

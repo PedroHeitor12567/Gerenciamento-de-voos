@@ -4,6 +4,12 @@ from voo_app.domain.entities.passageiro import Passageiro
 from voo_app.domain.entities.funcionario import Funcionario
 from voo_app.domain.entities.voo import Voo
 from voo_app.domain.entities.companhia_aerea import CompanhiaAerea
+from voo_app.infrastructure.database.connect import SessionLocal
+from voo_app.infrastructure.database.models import CompanhiasModel
+from voo_app.infrastructure.database.models_method import listar_pessoas, cadastrar_companhia, mudar_nome_companhia
+from voo_app.interface_adapters.presenters.relatorio_builder import _RelatorioBuilder
+from rich.console import Console
+
 
 pessoas = []
 passageiros = []
@@ -63,9 +69,7 @@ def menu():
 
         if opcao == "1":
             nome = input("Nome da companhia: ")
-            companhias.append(CompanhiaAerea(nome))
-            print("Companhia criada.")
-
+            cadastrar_companhia(nome)
         elif opcao == "2":
             nome = input("Nome da companhia a acessar: ")
             companhia = encontrar_companhia_por_nome(nome)
@@ -79,8 +83,9 @@ def menu():
                     print("0. Voltar")
                     sub_opcao = input("Escolha uma opção: ")
                     if sub_opcao == "1":
+                        construtor = _RelatorioBuilder("Mudar Nome da Companhia")
                         novo_nome = input("Novo nome: ")
-                        companhia.nome = novo_nome
+                        
                     elif sub_opcao == "2":
                         for v in companhia.listar_voos():
                             print(v)
@@ -120,9 +125,23 @@ def menu():
                 print("Pessoa cadastrada.")
 
         elif opcao == "4":
-            for p in pessoas:
-                print(p)
+            construtor = _RelatorioBuilder("Lista de Pessoas")
+            construtor.adicionar_colunas(
+                ("ID", "cyan", "center"),
+                ("Nome", "yellow", "center"),
+                ("CPF", "green", "center")
+            )
 
+            rows = listar_pessoas()
+            for row in rows:
+                construtor.adicionar_linhas(
+                    row[0],
+                    row[1],
+                    row[2]
+                )
+            tabela = construtor.construir()
+            console = Console()
+            console.print(tabela)
         elif opcao == "5":
             cpf = input("CPF da pessoa: ")
             pessoa = encontrar_pessoa_por_cpf(cpf)
@@ -141,10 +160,25 @@ def menu():
                 print("Pessoa não encontrada.")
 
         elif opcao == "6":
-            for p in passageiros:
-                print(p)
-                for b in p.listar_bagagens():
-                    print(f"  - {b}")
+            construtor = _RelatorioBuilder("Lista de Passageiros")
+            construtor.adicionar_colunas(
+                ("ID", "cyan", "center"),
+                ("Nome", "yellow", "center"),
+                ("CPF", "green", "center"),
+                ("Bagagens", "white", "center")
+            )
+
+            rows = listar_pessoas()
+            for row in rows:
+                construtor.adicionar_linhas(
+                    row[0],
+                    row[1],
+                    row[2],
+                    row[3]
+                )
+            tabela = construtor.construir()
+            console = Console()
+            console.print(tabela)
 
         elif opcao == "7":
             cpf = input("CPF: ")
