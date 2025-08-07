@@ -8,5 +8,8 @@ class _RelatorioBuilder:
         for nome, estilo, formatacao in colunas:
             self.tabela.add_column(nome, style=estilo, justify=formatacao)
     
-    def adicionar_linhas(self, ):
-        pass
+    def adicionar_linhas(self, *valores):
+        self.tabela.add_row(*[str(v) for v in valores])
+
+    def construir(self):
+        self.tabela
