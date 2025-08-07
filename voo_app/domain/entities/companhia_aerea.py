@@ -1,3 +1,9 @@
+from interface_adapters.presenters.relatorio_builder import _RelatorioBuilder
+from infrastructure.database.models_method import listar_voos
+from infrastructure.database.models import VooModel
+from infrastructure.database.connect import engine, SessionLocal
+from mini_aeronave import MiniAeronave
+
 class CompanhiaAerea:
     def __init__(self, nome: str):
         if len(nome) < 3:
@@ -30,9 +36,38 @@ class CompanhiaAerea:
                 return voo
         print(f"Voo {numero} não foi encontrado.")
 
-    def listar_voos(self):
-        print(f"Voos da companhia {self.nome}: ")
-        if not self.voos:
-            print("Nenhum voo foi encontrado.")
-        for voo in self.voos:
-            print(f"- Voo {voo.numero_voo}: {voo.origem} para {voo.destino}.")
+    def listar_voos():
+        construindo = _RelatorioBuilder("Todos os Voos")
+        construindo.adicionar_colunas(
+            ("Número", "cyan", "center"),
+            ("Origem", "yellow", "center"),
+            ("Destino", "green", "center"),
+            ("Aeronave", "white", "center")
+        )
+
+        rows = listar_voos()
+        for row in rows:
+            construindo.adicionar_linhas(
+                row[0],
+                row[1],
+                row[2],
+                row[3]
+            )
+        
+        return construindo.construir()
+    
+    def adicionar_voo(self, numero_voo: str, origem: str, destino: str, aeronave: MiniAeronave):
+        db = SessionLocal()
+        novo_voo = VooModel(numero_voo=numero_voo, origem=origem, destino=destino, aeronave=aeronave)
+
+        try:
+            db.add(novo_voo)
+            db.commit()
+            db.refresh(novo_voo)
+            print("✅ Voo cadastrado com sucesso!")
+        except Exception as e:
+            db.rollback()
+            print("❌ Erro ao cadastrar voo:", e)
+
+        finally:
+            db.close()
