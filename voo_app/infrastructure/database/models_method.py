@@ -1,7 +1,6 @@
 from .connect import engine, SessionLocal
 from .models import PessoaModel, FuncionarioModel, PassageiroModel, MiniAeronaveModel, VooModel
 from sqlalchemy import text
-
 def listar_pessoas():
     with engine.connect() as conn:
         resultado = conn.execute(text("SELECT * FROM pessoas"))
