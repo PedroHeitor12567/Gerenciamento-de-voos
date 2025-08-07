@@ -13,5 +13,3 @@ class Pessoa:
 
     def __str__(self):
         return f"Pessoa:{self.nome} ({self.cpf})"
-
-
