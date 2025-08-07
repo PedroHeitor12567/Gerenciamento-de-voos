@@ -1,5 +1,5 @@
 from sqlalchemy import Table, Column, Integer, ForeignKey
-from infrastructure.database.models import Base
+from voo_app.infrastructure.database.connect import Base
 
 voo_passageiros = Table(
     "voo_passageiros", Base.metadata,

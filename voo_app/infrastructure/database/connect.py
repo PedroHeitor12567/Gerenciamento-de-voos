@@ -1,12 +1,16 @@
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import OperationalError
 from dotenv import load_dotenv
+from sqlalchemy.orm import declarative_base, sessionmaker
 import os
 
 load_dotenv()
 
 DB_URL = os.getenv("DB_URL")
 engine = create_engine(DB_URL)
+Base = declarative_base()
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def testar_conexao():
     try:

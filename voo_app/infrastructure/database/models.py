@@ -1,8 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
-from sqlalchemy.orm import declarative_base, relationship
-from infrastructure.database.models_shared import voo_passageiros, voo_tripulantes
-
-Base = declarative_base()
+from sqlalchemy.orm import relationship
+from voo_app.infrastructure.database.models_shared import voo_passageiros, voo_tripulantes
+from voo_app.infrastructure.database.connect import Base
 
 class PessoaModel(Base):
     __tablename__ = "pessoas"
