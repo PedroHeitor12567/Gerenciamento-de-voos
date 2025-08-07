@@ -1,6 +1,8 @@
 from domain.entities.passageiro import Passageiro
 from domain.entities.funcionario import Funcionario
 from domain.entities.mini_aeronave import MiniAeronave
+from interface_adapters.presenters.relatorio_builder import _RelatorioBuilder
+from infrastructure.database.models_method import listar_passageiros, listar_funcionarios
 class Voo:
     def __init__(self, numero_voo, origem, destino, aeronave: MiniAeronave):
         self.numero_voo = numero_voo
@@ -27,11 +29,24 @@ class Voo:
             print(f"Tripulante {tripulante.nome} adicionado na tripulação do voo {self.numero_voo}.")
 
     def listar_passageiros(self):
-        print(f"Passageiros no voo {self.numero_voo}: ")
-        if not self.passageiros:
-            print("Nenhum passageiro encontrado.")
-        for passageiro in self.passageiros:
-            print(f"- {passageiro.nome} ({passageiro.cpf})")
+        construindo = _RelatorioBuilder("Todos os Passageiros")
+        construindo.adicionar_colunas(
+            ("ID", "cyan", "center"),
+            ("Nome", "yellow", "center"),
+            ("CPF", "green", "center"),
+            ("Bagagens", "white", "center")
+        )
+
+        rows = listar_passageiros()
+        for row in rows:
+            construindo.adicionar_linhas(
+                row[0],
+                row[1],
+                row[2],
+                row[3]
+            )
+        
+        return construindo.construir()
     
     def listar_tripulacao(self):
         print(f"Tripulação do voo {self.numero_voo}:")
