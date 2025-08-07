@@ -1,8 +1,10 @@
 from domain.entities.passageiro import Passageiro
 from domain.entities.funcionario import Funcionario
+from domain.entities.pessoa import Pessoa
 from domain.entities.mini_aeronave import MiniAeronave
 from interface_adapters.presenters.relatorio_builder import _RelatorioBuilder
-from infrastructure.database.models_method import listar_passageiros, listar_funcionarios
+from infrastructure.database.models_method import listar_passageiros, listar_funcionarios, Session
+from sqlalchemy.exc import NoResultFound
 class Voo:
     def __init__(self, numero_voo, origem, destino, aeronave: MiniAeronave):
         self.numero_voo = numero_voo
@@ -11,22 +13,64 @@ class Voo:
         self.aeronave = aeronave
         self.passageiros: list[Passageiro] = []
         self.tripulacao: list[Funcionario] = []
-    
-    def adicionar_passageiros(self, passageiro: Passageiro):
-        if passageiro in self.passageiros:
-            print(f"Passageiro {passageiro.nome} já está no voo {self.numero_voo}.")
-        elif len(self.passageiros) >= self.aeronave.capacidade:
-            print(f"A aeronave está cheia. Não é possível adicionar o passageiro {passageiro.nome}.")
+
+    def adicionar_passageiro(db: Session, pessoa_id: int, voo_id: int, bagagem: str) -> Passageiro:
+        pessoa = db.query(Pessoa).filter(Pessoa.id == pessoa_id).first()
+        if not pessoa:
+            raise ValueError(f"Pessoa com ID {pessoa_id} não existe.")
+        
+        voo = db.query(Voo).filter(Voo.id == voo_id).first()
+        if not voo:
+            raise ValueError(f"Voo com ID {voo_id} não existe.")
+        
+        ja_eh_passageiro = db.query(Passageiro).filter(
+            Passageiro.pessoa_id == pessoa_id,
+            Passageiro.voo_id == voo_id
+        ).first()
+
+        if ja_eh_passageiro:
+            raise ValueError(f"Pessoa ID {pessoa_id} já é passageira do voo ID {voo_id}.")
+        
+        total_passageiros = db.query(Passageiro).filter(
+            Passageiro.voo_id == voo_id
+        ).count()
+
+        if total_passageiros >= voo.capacidade:
+            raise ValueError(f"Voo ID {voo_id} está lotado. Capacidade máxima: {voo.capacidade} passageiros.")
+        
+        novo_passageiro = Passageiro(
+            pessoa_id=pessoa_id,
+            voo_id=voo_id,
+            bagagem=bagagem
+        )
+
+        db.add(novo_passageiro)
+        db.commit()
+        db.refresh(novo_passageiro)
+        return novo_passageiro
+
+    def adicionar_tripulante(self, session, pessoa_id: int, cargo: str):
+        try:
+            pessoa = session.query(Pessoa).filter_by(id=pessoa_id).one()
+        except NoResultFound:
+            print("❌ Pessoa não encontrada.")
+            return
+        
+        funcionario_existente = session.query(Funcionario).filter_by(pessoa_id=pessoa_id).first()
+        if funcionario_existente:
+            print("⚠️ Essa pessoa já é um funcionário.")
+            return
+
+        funcionario = Funcionario(pessoa_id=pessoa_id, cargo=cargo)
+        session.add(funcionario)
+        session.commit()
+        print(f"✅ Funcionário {pessoa.nome} criado com sucesso com cargo: {cargo}.")
+
+        if funcionario in self.tripulacao:
+            print(f"⚠️ Funcionário {pessoa.nome} já está na tripulação do voo {self.numero_voo}.")
         else:
-            self.passageiros.append(passageiro)
-            print(f"Passageiro {passageiro.nome} adicionado ao voo {self.numero_voo}.")
-    
-    def adicionar_tripulante(self, tripulante: Funcionario):
-        if tripulante in self.tripulacao:
-            print(f"Tripulante {tripulante.nome} já está na tripulação do voo {self.numero_voo}.")
-        else:
-            self.tripulacao.append(tripulante)
-            print(f"Tripulante {tripulante.nome} adicionado na tripulação do voo {self.numero_voo}.")
+            self.tripulacao.append(funcionario)
+            print(f"✈️ Funcionário {pessoa.nome} adicionado à tripulação do voo {self.numero_voo}.")
 
     def listar_passageiros(self):
         construindo = _RelatorioBuilder("Todos os Passageiros")
@@ -49,9 +93,22 @@ class Voo:
         return construindo.construir()
     
     def listar_tripulacao(self):
-        print(f"Tripulação do voo {self.numero_voo}:")
-        if not self.tripulacao:
-            print("Nenhum tripulante encontrado.")
-        for tripulante in self.tripulacao:
-            print(f"- {tripulante.nome} ({tripulante.cargo})")
+        construindo = _RelatorioBuilder("Todos os Funcionários")
+        construindo.adicionar_colunas(
+            ("ID", "cyan", "center"),
+            ("Nome", "yellow", "center"),
+            ("CPF", "green", "center"),
+            ("Bagagens", "white", "center")
+        )
+
+        rows = listar_funcionarios()
+        for row in rows:
+            construindo.adicionar_linhas(
+                row[0],
+                row[1],
+                row[2],
+                row[3]
+            )
+        
+        return construindo.construir()
         

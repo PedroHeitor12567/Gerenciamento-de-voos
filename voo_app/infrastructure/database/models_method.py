@@ -1,6 +1,7 @@
 from .connect import engine, SessionLocal
 from .models import PessoaModel, FuncionarioModel, PassageiroModel, MiniAeronaveModel, VooModel
 from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 def listar_pessoas():
     with engine.connect() as conn:
@@ -47,4 +48,3 @@ def cadastrar_pessoa(nome: str, cpf: str):
     
     finally:
         db.close()
-
