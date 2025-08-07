@@ -6,8 +6,10 @@ class Passageiro(Pessoa):
         super().__init__(nome, cpf)
         self.bagagens = bagagens if bagagens is not None else []
 
-    def adicionar_bagagem(self, descricao: str, peso: float):
-        nova_bagagem = Bagagem(descricao, peso)
+    def adicionar_bagagem(self, descricao: str, peso: float, session):
+        nova_bagagem = Bagagem(descricao=descricao, peso=peso, passageiro_id=self.id)
+        session.add(nova_bagagem)
+        session.commit()
         self.bagagens.append(nova_bagagem)
 
     def listar_bagagens(self):

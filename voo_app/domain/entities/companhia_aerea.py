@@ -62,13 +62,55 @@ class CompanhiaAerea:
         finally:
             db.close()
 
-    def buscar_voo(self, numero: str):
-        for voo in self.voos:
-            if voo.numero_voo == numero:
-                return voo
-        print(f"Voo {numero} não foi encontrado.")
+    def cadastrar_voo_banco(self, origem: str, destino: str, aeronave: MiniAeronave):
+        db = SessionLocal()
+        numero_voo = gerar_id()
+        try:
+            # Verifica se o voo já existe
+            voo_existente = db.query(VooModel).filter_by(numero_voo=numero_voo).first()
+            if voo_existente:
+                print(f"❌ Voo com número {numero_voo} já está cadastrado.")
+                return None
 
-    def listar_voos():
+            # Cria o novo objeto de voo, associando à companhia aérea
+            novo_voo = VooModel(
+            numero_voo=numero_voo,
+            origem=origem,
+            destino=destino,
+            aeronave_id=aeronave.id,
+            companhia_nome=self.nome  # Supondo que exista esse campo no modelo
+            )
+
+            db.add(novo_voo)
+            db.commit()
+            db.refresh(novo_voo)
+            print(f"✅ Voo {numero_voo} cadastrado com sucesso e associado à companhia {self.nome}!")
+            self.voos.append(novo_voo)
+            return novo_voo
+
+        except Exception as e:
+            db.rollback()
+            print("❌ Erro ao cadastrar voo:", e)
+            return None
+        finally:
+            db.close()
+
+
+    def buscar_voo(self, numero: str):
+        db = SessionLocal()
+        try:
+            voo = db.query(VooModel).filter_by(numero_voo=numero).first()
+            if voo:
+                return voo
+            print(f"Voo {numero} não foi encontrado.")
+            return None
+        except Exception as e:
+            print("❌ Erro ao buscar voo:", e)
+            return None
+        finally:
+            db.close()
+
+    def listar_voos(self):
         construindo = _RelatorioBuilder("Todos os Voos")
         construindo.adicionar_colunas(
             ("Número", "cyan", "center"),

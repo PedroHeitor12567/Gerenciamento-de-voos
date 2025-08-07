@@ -2,13 +2,15 @@ from voo_app.domain.entities.bagagem import Bagagem
 from voo_app.domain.entities.pessoa import Pessoa
 from voo_app.domain.entities.passageiro import Passageiro
 from voo_app.domain.entities.funcionario import Funcionario
-from voo_app.domain.entities.voo import Voo
 from voo_app.domain.entities.companhia_aerea import CompanhiaAerea
+from voo_app.domain.entities.mini_aeronave import MiniAeronave
+from voo_app.domain.entities.voo import Voo
 from voo_app.infrastructure.database.connect import SessionLocal
-from voo_app.infrastructure.database.models import CompanhiasModel
-from voo_app.infrastructure.database.models_method import listar_pessoas, cadastrar_companhia, mudar_nome_companhia
+from voo_app.infrastructure.database.models import CompanhiasModel, PessoaModel
+from voo_app.infrastructure.database.models_method import cadastrar_companhia, mudar_nome_companhia, tabela_pessoas, tabela_companhias, tabela_passageiros, cadastrar_pessoa, listar_companhias, add_miniaeronave_db, tabela_funcionarios, tabela_voo, cadastrar_passageiro, tabela_aeronaves, cadastrar_voo
 from voo_app.interface_adapters.presenters.relatorio_builder import _RelatorioBuilder
-from rich.console import Console
+from voo_app.infrastructure.database.models_method import cadastrar_funcionario
+
 
 
 pessoas = []
@@ -18,10 +20,12 @@ voos = []
 companhias = []
 
 def encontrar_pessoa_por_cpf(cpf):
-    for pessoa in pessoas:
-        if pessoa.cpf == cpf:
-            return pessoa
-    return None
+    session = SessionLocal()
+    try:
+        pessoa = session.query(PessoaModel).filter(PessoaModel.cpf == cpf).first()
+        return pessoa
+    finally:
+        session.close()
 
 def encontrar_passageiro_por_cpf(cpf):
     for passageiro in passageiros:
@@ -42,10 +46,12 @@ def encontrar_voo_por_codigo(codigo):
     return None
 
 def encontrar_companhia_por_nome(nome):
-    for companhia in companhias:
-        if companhia.nome == nome:
-            return companhia
-    return None
+    session = SessionLocal()
+    try:
+        companhia = session.query(CompanhiasModel).filter(CompanhiasModel.nome == nome).first()
+        return companhia
+    finally:
+        session.close()
 
 def menu():
     while True:
@@ -64,6 +70,7 @@ def menu():
         print("12. Adicionar Tripulação ao Voo")
         print("13. Listar Passageiros no Voo")
         print("14. Listar Tripulação no Voo")
+        print("15. Cadastrar Aeronave")
         print("0. Sair")
         opcao = input("Escolha uma opção: ")
 
@@ -71,6 +78,7 @@ def menu():
             nome = input("Nome da companhia: ")
             cadastrar_companhia(nome)
         elif opcao == "2":
+            tabela_companhias()
             nome = input("Nome da companhia a acessar: ")
             companhia = encontrar_companhia_por_nome(nome)
             if companhia:
@@ -83,33 +91,38 @@ def menu():
                     print("0. Voltar")
                     sub_opcao = input("Escolha uma opção: ")
                     if sub_opcao == "1":
-                        construtor = _RelatorioBuilder("Mudar Nome da Companhia")
+                        nome_atual = companhia.nome
                         novo_nome = input("Novo nome: ")
-                        
+                        mudar_nome_companhia(nome_atual, novo_nome)
                     elif sub_opcao == "2":
-                        for v in companhia.listar_voos():
-                            print(v)
+                        tabela_voos = companhia.listar_voos()
+                        print(tabela_voos)
                     elif sub_opcao == "3":
+                        tabela_voo()
+                        companhiaclass = CompanhiaAerea(companhia.nome)
                         cod = input("Código do voo: ")
-                        voo = companhia.buscar_voo(cod)
+                        voo = companhiaclass.buscar_voo(cod)
                         if voo:
-                            print(voo)
-                            print("Passageiros:")
-                            for p in voo.passageiros:
-                                print(p)
-                                for b in p.listar_bagagens():
-                                    print(f"  - {b}")
-                            print("Tripulação:")
-                            for f in voo.tripulacao:
-                                print(f)
+                            construro = _RelatorioBuilder(f"Voo {voo.codigo}")
+                            construro.adicionar_colunas(
+                                ("Origem", "yellow", "center"),
+                                ("Destino", "green", "center"),
+                                ("Aeronave", "white", "center")
+                            )
+                            construro.adicionar_linhas(
+                                voo.origem,
+                                voo.destino,
+                                voo.aeronave
+                            )
+                            print(construro.construir())
                         else:
                             print("Voo não encontrado.")
                     elif sub_opcao == "4":
-                        codigo = input("Código do novo voo: ")
-                        novo_voo = Voo(codigo)
-                        companhia.adicionar_voo(novo_voo)
-                        voos.append(novo_voo)
-                        print("Voo adicionado.")
+                        tabela_aeronaves()
+                        aeronave_id = int(input("ID da aeronave: "))
+                        origem = input("Origem do voo: ")
+                        destino = input("Destino do voo: ")
+                        cadastrar_voo(origem, destino, aeronave_id)
                     elif sub_opcao == "0":
                         break
             else:
@@ -118,31 +131,12 @@ def menu():
         elif opcao == "3":
             nome = input("Nome: ")
             cpf = input("CPF: ")
-            if encontrar_pessoa_por_cpf(cpf):
-                print("Pessoa já cadastrada.")
-            else:
-                pessoas.append(Pessoa(nome, cpf))
-                print("Pessoa cadastrada.")
+            cadastrar_pessoa(nome, cpf)
 
         elif opcao == "4":
-            construtor = _RelatorioBuilder("Lista de Pessoas")
-            construtor.adicionar_colunas(
-                ("ID", "cyan", "center"),
-                ("Nome", "yellow", "center"),
-                ("CPF", "green", "center")
-            )
-
-            rows = listar_pessoas()
-            for row in rows:
-                construtor.adicionar_linhas(
-                    row[0],
-                    row[1],
-                    row[2]
-                )
-            tabela = construtor.construir()
-            console = Console()
-            console.print(tabela)
+            tabela_pessoas()
         elif opcao == "5":
+            tabela_pessoas()
             cpf = input("CPF da pessoa: ")
             pessoa = encontrar_pessoa_por_cpf(cpf)
             if pessoa:
@@ -153,61 +147,44 @@ def menu():
                         break
                     peso = float(input("Peso da bagagem: "))
                     bagagem = Bagagem(desc, peso)
-                    passageiro.adicionar_bagagem(bagagem)
-                passageiros.append(passageiro)
+                    passageiro.adicionar_bagagem(bagagem) # Certifique-se de ter a função correta para cadastrar passageiro no banco
+                cadastrar_passageiro(passageiro.nome, passageiro.cpf, passageiro.bagagens)
                 print("Passageiro cadastrado.")
             else:
                 print("Pessoa não encontrada.")
 
         elif opcao == "6":
-            construtor = _RelatorioBuilder("Lista de Passageiros")
-            construtor.adicionar_colunas(
-                ("ID", "cyan", "center"),
-                ("Nome", "yellow", "center"),
-                ("CPF", "green", "center"),
-                ("Bagagens", "white", "center")
-            )
-
-            rows = listar_pessoas()
-            for row in rows:
-                construtor.adicionar_linhas(
-                    row[0],
-                    row[1],
-                    row[2],
-                    row[3]
-                )
-            tabela = construtor.construir()
-            console = Console()
-            console.print(tabela)
-
+            tabela_passageiros()
         elif opcao == "7":
             cpf = input("CPF: ")
             pessoa = encontrar_pessoa_por_cpf(cpf)
             if pessoa:
-                funcionario = Funcionario(pessoa.nome, pessoa.cpf)
                 cargo = input("Cargo: ")
-                matricula = input("Matricula")
-                funcionarios.append(Funcionario(cargo, matricula))
-                print("Funcionário cadastrado.")
+
+                # Adiciona o funcionário no banco de dados
+                cadastrar_funcionario(pessoa.nome, pessoa.cpf, cargo)
             else:
                 print("Pessoa não encontrada")
 
         elif opcao == "8":
-            for f in funcionarios:
-                print(f)
+            tabela_funcionarios()
 
         elif opcao == "9":
             codigo = input("Código do voo: ")
-            if encontrar_voo_por_codigo(codigo):
-                print("Voo já existe.")
+            companhia_nome = input("Nome da companhia aérea: ")
+            companhia = encontrar_companhia_por_nome(companhia_nome)
+            if not companhia:
+                print("Companhia não encontrada.")
             else:
-                novo_voo = Voo(codigo)
-                voos.append(novo_voo)
-                print("Voo cadastrado.")
+                if companhia.buscar_voo(codigo):
+                    print("Voo já cadastrado para esta companhia.")
+                else:
+                    novo_voo = Voo(codigo)
+                    companhia.adicionar_voo(novo_voo)
+                    print("Voo cadastrado com sucesso no banco de dados.")
 
         elif opcao == "10":
-            for v in voos:
-                print(v)
+            tabela_voo()
 
         elif opcao == "11":
             cod = input("Código do voo: ")
@@ -256,6 +233,12 @@ def menu():
                     print(f)
             else:
                 print("Voo não encontrado.")
+        
+        elif opcao == "15":
+            modelo = input("Modelo da aeronave: ")
+            capacidade = int(input("Capacidade: "))
+            nova_aeronave = MiniAeronave(modelo, capacidade)
+            add_miniaeronave_db(nova_aeronave)
 
         elif opcao == "0":
             print("Saindo...")
