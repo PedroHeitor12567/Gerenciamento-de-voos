@@ -12,7 +12,6 @@ class Pessoa:
         return self._cpf
 
     def __str__(self):
-        return f"{self.nome} ({self.cpf})"
+        return f"Pessoa:{self.nome} ({self.cpf})"
 
-    def __str__(self):
-        return f"Pessoa: {self.nome}"
+

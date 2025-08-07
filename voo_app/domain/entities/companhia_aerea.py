@@ -27,7 +27,7 @@ class CompanhiaAerea:
             print(f"Nome atualizado para: {self.nome}.")
 
     def adicionar_voo(self, voo):
-        self.voos_append(voo)
+        self.voos.append(voo)   
         print(f"Voo {voo.numero_voo} adicionado na companhia.")
 
     def buscar_voo(self, numero: str):
@@ -36,7 +36,7 @@ class CompanhiaAerea:
                 return voo
         print(f"Voo {numero} não foi encontrado.")
 
-    def listar_voos():
+    def listar_voos(self):
         construindo = _RelatorioBuilder("Todos os Voos")
         construindo.adicionar_colunas(
             ("Número", "cyan", "center"),
