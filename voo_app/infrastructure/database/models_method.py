@@ -311,3 +311,119 @@ def cadastrar_funcionario(nome: str, cpf: str, cargo: str):
         print("❌ Erro ao cadastrar funcionário:", e)
     finally:
         db.close()
+    
+def adicionar_passageiro_voo(voo_id: int, passageiro_id: int):
+    db = SessionLocal()
+    try:
+        voo = db.query(VooModel).filter_by(id=voo_id).first()
+        passageiro = db.query(PassageiroModel).filter_by(id=passageiro_id).first()
+
+        if not voo:
+            print("❌ Voo não encontrado.")
+            return
+        if not passageiro:
+            print("❌ Passageiro não encontrado.")
+            return
+
+        if passageiro in voo.passageiros:
+            print("⚠️ Passageiro já está no voo.")
+            return
+
+        voo.passageiros.append(passageiro)
+        db.commit()
+        print(f"✅ Passageiro {passageiro.nome} adicionado ao voo {voo.numero_voo} com sucesso!")
+    except Exception as e:
+        db.rollback()
+        print("❌ Erro ao adicionar passageiro ao voo:", e)
+    finally:
+        db.close()
+
+def adicionar_funcionario_voo(voo_id: int, funcionario_id: int):
+    db = SessionLocal()
+    try:
+        voo = db.query(VooModel).filter_by(id=voo_id).first()
+        funcionario = db.query(FuncionarioModel).filter_by(id=funcionario_id).first()
+
+        if not voo:
+            print("❌ Voo não encontrado.")
+            return
+        if not funcionario:
+            print("❌ Funcionário não encontrado.")
+            return
+
+        if funcionario in voo.tripulacao:
+            print("⚠️ Funcionário já está na tripulação do voo.")
+            return
+
+        voo.tripulacao.append(funcionario)
+        db.commit()
+        print(f"✅ Funcionário {funcionario.nome} adicionado à tripulação do voo {voo.numero_voo} com sucesso!")
+    except Exception as e:
+        db.rollback()
+        print("❌ Erro ao adicionar funcionário ao voo:", e)
+    finally:
+        db.close()
+
+def tabela_tripulacao_voo(voo_id: int):
+    db = SessionLocal()
+    try:
+        voo = db.query(VooModel).filter_by(id=voo_id).first()
+        if not voo:
+            print("❌ Voo não encontrado.")
+            return
+
+        construtor = _RelatorioBuilder(f"Tripulação do Voo {voo.numero_voo}")
+        construtor.adicionar_colunas(
+            ("ID", "cyan", "center"),
+            ("Nome", "yellow", "center"),
+            ("CPF", "green", "center"),
+            ("Matrícula", "light_green", "center"),
+            ("Cargo", "white", "center")
+        )
+
+        for funcionario in voo.tripulacao:
+            construtor.adicionar_linhas(
+                funcionario.id,
+                funcionario.nome,
+                funcionario.cpf,
+                funcionario.matricula,
+                funcionario.cargo
+            )
+        tabela = construtor.construir()
+        console = Console()
+        console.print(tabela)
+    except Exception as e:
+        print("❌ Erro ao gerar tabela de tripulação:", e)
+    finally:
+        db.close()
+
+def tabela_passageiros_voo(voo_id: int):
+    db = SessionLocal()
+    try:
+        voo = db.query(VooModel).filter_by(id=voo_id).first()
+        if not voo:
+            print("❌ Voo não encontrado.")
+            return
+
+        construtor = _RelatorioBuilder(f"Passageiros do Voo {voo.numero_voo}")
+        construtor.adicionar_colunas(
+            ("ID", "cyan", "center"),
+            ("Nome", "yellow", "center"),
+            ("CPF", "green", "center"),
+            ("Bagagens", "white", "center")
+        )
+
+        for passageiro in voo.passageiros:
+            construtor.adicionar_linhas(
+                passageiro.id,
+                passageiro.nome,
+                passageiro.cpf,
+                passageiro.bagagens
+            )
+        tabela = construtor.construir()
+        console = Console()
+        console.print(tabela)
+    except Exception as e:
+        print("❌ Erro ao gerar tabela de passageiros:", e)
+    finally:
+        db.close()

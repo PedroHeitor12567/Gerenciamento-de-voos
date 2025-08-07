@@ -1,7 +1,7 @@
 from voo_app.interface_adapters.presenters.relatorio_builder import _RelatorioBuilder
 from voo_app.infrastructure.database.models_method import listar_voos
 from voo_app.infrastructure.database.models import VooModel
-from voo_app.infrastructure.database.connect import engine, SessionLocal
+from voo_app.infrastructure.database.connect import SessionLocal
 from voo_app.domain.mixins.identificavel import gerar_id
 from .mini_aeronave import MiniAeronave
 

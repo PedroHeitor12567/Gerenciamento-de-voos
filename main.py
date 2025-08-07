@@ -6,8 +6,8 @@ from voo_app.domain.entities.companhia_aerea import CompanhiaAerea
 from voo_app.domain.entities.mini_aeronave import MiniAeronave
 from voo_app.domain.entities.voo import Voo
 from voo_app.infrastructure.database.connect import SessionLocal
-from voo_app.infrastructure.database.models import CompanhiasModel, PessoaModel
-from voo_app.infrastructure.database.models_method import cadastrar_companhia, mudar_nome_companhia, tabela_pessoas, tabela_companhias, tabela_passageiros, cadastrar_pessoa, listar_companhias, add_miniaeronave_db, tabela_funcionarios, tabela_voo, cadastrar_passageiro, tabela_aeronaves, cadastrar_voo
+from voo_app.infrastructure.database.models import CompanhiasModel, PessoaModel, VooModel, PassageiroModel, FuncionarioModel
+from voo_app.infrastructure.database.models_method import cadastrar_companhia, mudar_nome_companhia, tabela_pessoas, tabela_companhias, tabela_passageiros, cadastrar_pessoa, listar_companhias, add_miniaeronave_db, tabela_funcionarios, tabela_voo, cadastrar_passageiro, tabela_aeronaves, cadastrar_voo, adicionar_passageiro_voo, adicionar_funcionario_voo, tabela_tripulacao_voo, tabela_passageiros_voo
 from voo_app.interface_adapters.presenters.relatorio_builder import _RelatorioBuilder
 from voo_app.infrastructure.database.models_method import cadastrar_funcionario
 
@@ -28,22 +28,28 @@ def encontrar_pessoa_por_cpf(cpf):
         session.close()
 
 def encontrar_passageiro_por_cpf(cpf):
-    for passageiro in passageiros:
-        if passageiro.cpf == cpf:
-            return passageiro
-    return None
+    session = SessionLocal()
+    try:
+        pessoa = session.query(PassageiroModel).filter(PassageiroModel.cpf == cpf).first()
+        return pessoa
+    finally:
+        session.close()
 
 def encontrar_funcionario_por_cpf(cpf):
-    for funcionario in funcionarios:
-        if funcionario.cpf == cpf:
-            return funcionario
-    return None
+    session = SessionLocal()
+    try:
+        pessoa = session.query(FuncionarioModel).filter(FuncionarioModel.cpf == cpf).first()
+        return pessoa
+    finally:
+        session.close()
 
 def encontrar_voo_por_codigo(codigo):
-    for voo in voos:
-        if voo.codigo == codigo:
-            return voo
-    return None
+    session = SessionLocal()
+    try:
+        voo = session.query(VooModel).filter(VooModel.id == codigo).first()
+        return voo
+    finally:
+        session.close()
 
 def encontrar_companhia_por_nome(nome):
     session = SessionLocal()
@@ -187,27 +193,29 @@ def menu():
             tabela_voo()
 
         elif opcao == "11":
+            tabela_voo()
             cod = input("Código do voo: ")
             voo = encontrar_voo_por_codigo(cod)
             if voo:
+                tabela_passageiros()
                 cpf = input("CPF do passageiro: ")
                 passageiro = encontrar_passageiro_por_cpf(cpf)
                 if passageiro:
-                    voo.adicionar_passageiro(passageiro)
-                    print("Passageiro adicionado ao voo.")
+                    adicionar_passageiro_voo(voo.id, passageiro.id)
                 else:
                     print("Passageiro não encontrado.")
             else:
                 print("Voo não encontrado.")
 
         elif opcao == "12":
+            tabela_voo()
             cod = input("Código do voo: ")
             voo = encontrar_voo_por_codigo(cod)
             if voo:
                 cpf = input("CPF do funcionário: ")
                 funcionario = encontrar_funcionario_por_cpf(cpf)
                 if funcionario:
-                    voo.adicionar_funcionario(funcionario)
+                    adicionar_funcionario_voo(voo.id, funcionario.id)
                     print("Funcionário adicionado ao voo.")
                 else:
                     print("Funcionário não encontrado.")
@@ -215,24 +223,16 @@ def menu():
                 print("Voo não encontrado.")
 
         elif opcao == "13":
+            tabela_voo()
             cod = input("Código do voo: ")
             voo = encontrar_voo_por_codigo(cod)
-            if voo:
-                for p in voo.passageiros:
-                    print(p)
-                    for b in p.listar_bagagens():
-                        print(f"  - {b}")
-            else:
-                print("Voo não encontrado.")
+            tabela_passageiros_voo(voo.id)
 
         elif opcao == "14":
+            tabela_voo()
             cod = input("Código do voo: ")
             voo = encontrar_voo_por_codigo(cod)
-            if voo:
-                for f in voo.tripulacao:
-                    print(f)
-            else:
-                print("Voo não encontrado.")
+            tabela_tripulacao_voo(voo.id)
         
         elif opcao == "15":
             modelo = input("Modelo da aeronave: ")
