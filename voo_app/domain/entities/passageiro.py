@@ -1,7 +1,8 @@
 from domain.entities.pessoa import Pessoa
+from domain.entities.bagagem import Bagagem
 
 class Passageiro(Pessoa):
-    def __init__(self, nome:str, cpf:str, bagagens:None):
+    def __init__(self, nome:str, cpf:str, bagagens: Bagagem):
         super().__init__(nome, cpf)
         self.bagagens = bagagens if bagagens is not None else []
 
