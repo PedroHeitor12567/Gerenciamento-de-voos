@@ -5,8 +5,28 @@ from voo_app.domain.entities.mini_aeronave import MiniAeronave
 from voo_app.interface_adapters.presenters.relatorio_builder import _RelatorioBuilder
 from voo_app.infrastructure.database.models_method import listar_passageiros, listar_funcionarios, Session
 from sqlalchemy.exc import NoResultFound
+
 class Voo:
+    """Classe que representa um voo com passageiros e tripulação.
+
+    Attributes:
+        numero_voo (str): Número identificador do voo.
+        origem (str): Local de origem do voo.
+        destino (str): Local de destino do voo.
+        aeronave (MiniAeronave): Aeronave designada para o voo.
+        passageiros (list[Passageiro]): Lista de passageiros cadastrados no voo.
+        tripulacao (list[Funcionario]): Lista de funcionários (tripulação) do voo.
+    """
+
     def __init__(self, numero_voo, origem, destino, aeronave: MiniAeronave):
+        """Inicializa um voo com origem, destino e aeronave.
+
+        Args:
+            numero_voo (str): Número identificador do voo.
+            origem (str): Local de partida do voo.
+            destino (str): Local de chegada do voo.
+            aeronave (MiniAeronave): Objeto representando a aeronave usada no voo.
+        """
         self.numero_voo = numero_voo
         self.origem = origem
         self.destino = destino
@@ -14,7 +34,22 @@ class Voo:
         self.passageiros: list[Passageiro] = []
         self.tripulacao: list[Funcionario] = []
 
+    @staticmethod
     def adicionar_passageiro(db: Session, pessoa_id: int, voo_id: int, bagagem: str) -> Passageiro:
+        """Adiciona um passageiro ao voo no banco de dados, com verificação de capacidade.
+
+        Args:
+            db (Session): Sessão ativa do banco de dados.
+            pessoa_id (int): ID da pessoa a ser adicionada como passageiro.
+            voo_id (int): ID do voo ao qual será associada.
+            bagagem (str): Descrição da bagagem do passageiro.
+
+        Returns:
+            Passageiro: Objeto Passageiro recém-criado.
+
+        Raises:
+            ValueError: Se a pessoa ou voo não existirem, ou se o voo estiver lotado.
+        """
         pessoa = db.query(Pessoa).filter(Pessoa.id == pessoa_id).first()
         if not pessoa:
             raise ValueError(f"Pessoa com ID {pessoa_id} não existe.")
@@ -50,6 +85,13 @@ class Voo:
         return novo_passageiro
 
     def adicionar_tripulante(self, session, pessoa_id: int, cargo: str):
+        """Adiciona um tripulante (funcionário) ao voo.
+
+        Args:
+            session: Sessão ativa do banco de dados.
+            pessoa_id (int): ID da pessoa a ser promovida a funcionário.
+            cargo (str): Cargo a ser atribuído ao funcionário.
+        """
         try:
             pessoa = session.query(Pessoa).filter_by(id=pessoa_id).one()
         except NoResultFound:
@@ -73,6 +115,11 @@ class Voo:
             print(f"✈️ Funcionário {pessoa.nome} adicionado à tripulação do voo {self.numero_voo}.")
 
     def listar_passageiros(self):
+        """Gera um relatório formatado de todos os passageiros do voo.
+
+        Returns:
+            str: Relatório formatado com colunas (ID, Nome, CPF, Bagagens).
+        """
         construindo = _RelatorioBuilder("Todos os Passageiros")
         construindo.adicionar_colunas(
             ("ID", "cyan", "center"),
@@ -93,6 +140,11 @@ class Voo:
         return construindo.construir()
     
     def listar_tripulacao(self):
+        """Gera um relatório formatado de todos os membros da tripulação do voo.
+
+        Returns:
+            str: Relatório formatado com colunas (ID, Nome, CPF, Bagagens).
+        """
         construindo = _RelatorioBuilder("Todos os Funcionários")
         construindo.adicionar_colunas(
             ("ID", "cyan", "center"),
@@ -111,4 +163,3 @@ class Voo:
             )
         
         return construindo.construir()
-        
